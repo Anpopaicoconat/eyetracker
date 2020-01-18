@@ -8,6 +8,7 @@ import cv2
 import os
 import random
 import time
+import matplotlib.pyplot as plt
 
 def show(i):
     cv2.imshow('{}'.format(data_y[i]), data_x[i])
@@ -39,7 +40,7 @@ random.shuffle(data_y)#0 -> open, 1 -> closed
 ###############################################
 
 batch_size = 32 # in each iteration, we consider 32 training examples at once
-num_epochs = 100 # we iterate 200 times over the entire training set
+num_epochs = 5 # we iterate 200 times over the entire training set
 kernel_size = 3 # we will use 3x3 kernels throughout
 pool_size = 2 # we will use 2x2 pooling throughout---------------------------------------------change
 conv_depth_1 = 32 # we will initially have 32 kernels per conv. layer...
@@ -96,22 +97,32 @@ model.compile(loss='categorical_crossentropy', # using the cross-entropy loss fu
               metrics=['accuracy']) # reporting the accuracy
 print('_____________________________start______________________/nконец компиляции')
 
-model.fit(X_train, Y_train, # Train the model using the training set...
+history = model.fit(X_train, Y_train, # Train the model using the training set...
           batch_size=batch_size, nb_epoch=num_epochs,
           verbose=1, validation_split=0.1) # ...holding out 10% of the data for validation
 model.evaluate(X_test, Y_test, verbose=1) # Evaluate the trained model on the test set!
 print('_____________________________start______________________/nконец')
-model.save('open-close {}.h5'.format(time.ctime(time.time()).replace(':', '.')))
-print('saved')
+#model.save('open-close {}.h5'.format(time.ctime(time.time()).replace(':', '.')))
+#print('saved')
 
 history_dict = history.history
-loss_values = history_dict['loss']
-val_loss_values = history_dict['val_loss']
-epochs = range(1, len(acc) + 1)
-plt.plot(epochs, loss_values, 'bo', label='Training loss')
-plt.plot(epochs, val_loss_values, 'b', label='Validation loss')
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+epochs = range(1, len(loss) + 1)
+plt.plot(epochs, loss, 'bo', label='Training loss')
+plt.plot(epochs, val_loss, 'b', label='Validation loss')
 plt.title('Training and validation loss')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
+plt.legend()
+plt.show()
+plt.clf() #Очистить рисунок
+acc = history.history['acc']
+val_acc = history.history['val_acc']
+plt.plot(epochs, acc, 'bo', label='Training acc')
+plt.plot(epochs, val_acc, 'b', label='Validation acc')
+plt.title('Training and validation accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
 plt.legend()
 plt.show()
