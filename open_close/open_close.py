@@ -7,6 +7,7 @@ import numpy as np
 import cv2
 import os
 import random
+import time
 
 def show(i):
     cv2.imshow('{}'.format(data_y[i]), data_x[i])
@@ -100,7 +101,7 @@ model.fit(X_train, Y_train, # Train the model using the training set...
           verbose=1, validation_split=0.1) # ...holding out 10% of the data for validation
 model.evaluate(X_test, Y_test, verbose=1) # Evaluate the trained model on the test set!
 print('_____________________________start______________________/nконец')
-model.save('open-close.h5')
+model.save('open-close {}.h5'.format(time.ctime(time.time()).replace(':', '.')))
 print('saved')
 
 history_dict = history.history
