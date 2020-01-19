@@ -20,5 +20,3 @@ def prediction(img):
 
 ocm = keras.models.load_model('open-close.h5')
 
-camera = 'http://192.168.43.229:4747/=http://192.168.43.229:4747/video'
-cap = cv2.VideoCapture('http://192.168.43.229:4747/video')
