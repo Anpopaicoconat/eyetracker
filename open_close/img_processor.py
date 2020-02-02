@@ -35,11 +35,16 @@ def search_eye(img):
 
 def load_images(folder):
     images = []
+    targets = []
     for filename in os.listdir(folder):
+        print(filename)
         img = cv2.imread(os.path.join(folder,filename))
         #img = cv2.resize(img, (32, 32), interpolation = cv2.INTER_NEAREST)
         if img is not None:
-            yield img
+            images.append(img)
+            c = filename.split(')')[0].replace('(', '').replace(' ', '').split(',')
+            targets.append(np.array(c))
+    return images, targets
 
 def show(img):
     while(True):
@@ -52,9 +57,11 @@ def show(img):
         else:
             print(k)
 
-img_l = list(load_images(r'C:\Users\anpopaicoconat\source\repos\detector\detector\data\open\processed'))
+img_l = load_images(r'C:\Users\anpopaicoconat\source\repos\detector\detector\data\coords\pasha 1')
 eyes = []
-for i in img_l:
+print('img_l', len(img_l))
+for i in img_l[0]:
+    
     for j in search_eye(i):
         eyes.append(j)
 
