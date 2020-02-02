@@ -57,13 +57,13 @@ def show(img):
         else:
             print(k)
 
-img_l = load_images(r'C:\Users\anpopaicoconat\source\repos\detector\detector\data\coords\pasha 1')
-eyes = []
-print('img_l', len(img_l))
-for i in img_l[0]:
+#img_l = load_images(r'C:\Users\anpopaicoconat\source\repos\detector\detector\data\coords\pasha 1')
+#eyes = []
+#print('img_l', len(img_l))
+#for i in img_l[0]:
     
-    for j in search_eye(i):
-        eyes.append(j)
+    #for j in search_eye(i):
+        #eyes.append(j)
 
-for img in eyes:
-    show(img)
+#for img in eyes:
+    #show(img)
