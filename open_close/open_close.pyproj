@@ -22,6 +22,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="cords_nn.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="img_processor.py">
       <SubType>Code</SubType>
     </Compile>

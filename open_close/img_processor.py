@@ -12,26 +12,33 @@ predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
 def search_eye(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faces = detector(gray)
-    for face in faces:
-        #поиск глаз
-        landmarks = predictor(gray, face)
-        eyes = ((landmarks.part(36).x, np.maximum(landmarks.part(37).y, landmarks.part(38).y), landmarks.part(39).x, np.minimum(landmarks.part(40).y, landmarks.part(41).y)),
-               (landmarks.part(42).x, np.maximum(landmarks.part(43).y, landmarks.part(44).y), landmarks.part(45).x, np.minimum(landmarks.part(47).y, landmarks.part(46).y)))
-        #(xr1 yr1 xr2 yr2) (xl1 yl1 xl2 yl2)
-        for eye in eyes:
-            # добиваем обрезку для одинакового разрешения
-            dif_x = 64-(eye[2]-eye[0])#s otricatelnimi problema
-            dif_y = 64-(eye[3]-eye[1])
+    #faces = detector(gray)
+    face = detector(gray)[0]
+    landmarks = predictor(gray, face)
+    coords_l = []
+    for i in range(68):
+        x = landmarks.part(i).x
+        y = landmarks.part(i).y
+        coords_l.append(x)
+        coords_l.append(y)
+    eyes = ((landmarks.part(36).x, np.maximum(landmarks.part(37).y, landmarks.part(38).y), landmarks.part(39).x, np.minimum(landmarks.part(40).y, landmarks.part(41).y)),
+            (landmarks.part(42).x, np.maximum(landmarks.part(43).y, landmarks.part(44).y), landmarks.part(45).x, np.minimum(landmarks.part(47).y, landmarks.part(46).y)))
+    #(xr1 yr1 xr2 yr2) (xl1 yl1 xl2 yl2)
+    ret = []
+    for eye in eyes:
+        # добиваем обрезку для одинакового разрешения
+        dif_x = 64-(eye[2]-eye[0])#s otricatelnimi problema
+        dif_y = 64-(eye[3]-eye[1])
         
-            ad_xl = dif_x//2# нельзя увеличивать больше чем в 2 раза в этом случае произвести ресайз
-            ad_xr = dif_x//2+dif_x%2
+        ad_xl = dif_x//2# нельзя увеличивать больше чем в 2 раза в этом случае произвести ресайз
+        ad_xr = dif_x//2+dif_x%2
         
-            ad_yl = dif_y//2
-            ad_yr = dif_y//2+dif_y%2
-            print('dif', dif_x, dif_y)
-            eye_img = img[eye[1]-ad_yl: eye[3]+ad_yr, eye[0]-ad_xl: eye[2]+ad_xr]
-            yield eye_img
+        ad_yl = dif_y//2
+        ad_yr = dif_y//2+dif_y%2
+        print('dif', dif_x, dif_y)
+        eye_img = img[eye[1]-ad_yl: eye[3]+ad_yr, eye[0]-ad_xl: eye[2]+ad_xr]
+        ret.append(eye_img)
+    return ret[1], ret[0], coords_l # сначала левый потом правый относительно человека
 
 def load_images(folder):
     images = []
@@ -57,13 +64,17 @@ def show(img):
         else:
             print(k)
 
-#img_l = load_images(r'C:\Users\anpopaicoconat\source\repos\detector\detector\data\coords\pasha 1')
+img_l, _ = load_images(r'C:\Users\anpopaicoconat\source\repos\detector\detector\data\coords\pasha 1')
 #eyes = []
 #print('img_l', len(img_l))
-#for i in img_l[0]:
-    
-    #for j in search_eye(i):
-        #eyes.append(j)
+def f():
+    l_eye = []
+    r_eye = []
+    for i in img_l:
+        l, r, c = search_eye(i)
+        l_eye.append(l)
+        r_eye.append(r)
+        print(len(c))
 
-#for img in eyes:
-    #show(img)
+    for img in r_eye:
+        show(img)
