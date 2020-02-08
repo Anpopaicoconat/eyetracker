@@ -35,7 +35,6 @@ def search_eye(img):
         
         ad_yl = dif_y//2
         ad_yr = dif_y//2+dif_y%2
-        print('dif', dif_x, dif_y)
         eye_img = img[eye[1]-ad_yl: eye[3]+ad_yr, eye[0]-ad_xl: eye[2]+ad_xr]
         ret.append(eye_img)
     return ret[1], ret[0], coords_l # сначала левый потом правый относительно человека
@@ -43,15 +42,16 @@ def search_eye(img):
 def load_images(folder):
     images = []
     targets = []
+    names = []
     for filename in os.listdir(folder):
-        print(filename)
+        names.append(filename)
         img = cv2.imread(os.path.join(folder,filename))
         #img = cv2.resize(img, (32, 32), interpolation = cv2.INTER_NEAREST)
         if img is not None:
             images.append(img)
             c = filename.split(')')[0].replace('(', '').replace(' ', '').split(',')
             targets.append(np.array(c))
-    return images, targets
+    return images, targets, names
 
 def show(img):
     while(True):
@@ -64,17 +64,13 @@ def show(img):
         else:
             print(k)
 
-img_l, _ = load_images(r'C:\Users\anpopaicoconat\source\repos\detector\detector\data\coords\pasha 1')
+img_l, targets, names = load_images(r'C:\Users\anpopaicoconat\source\repos\detector\detector\data\coords\pasha 1')
 #eyes = []
 #print('img_l', len(img_l))
 def f():
-    l_eye = []
-    r_eye = []
-    for i in img_l:
+    for i, n in zip(img_l, names):
         l, r, c = search_eye(i)
-        l_eye.append(l)
-        r_eye.append(r)
-        print(len(c))
-
-    for img in r_eye:
-        show(img)
+        cv2.imwrite(r'C:\Users\anpopaicoconat\source\repos\train_data\left\\'+n, l)
+        cv2.imwrite(r'C:\Users\anpopaicoconat\source\repos\train_data\right\\'+n, r)
+        cv2.imwrite(r'C:\Users\anpopaicoconat\source\repos\train_data\og\\'+n, i)
+f()

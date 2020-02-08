@@ -60,12 +60,38 @@ c1_hidden = Dense(128, activation='relu')(lm_og_concatenate)
 c1_drop_3 = Dropout(drop_prob_2)(c1_hidden)
 
 #eye conv base
+conv_1_l = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu')(inp_eye_l)
+conv_2_l = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu')(conv_1_l)
+pool_1_l = MaxPooling2D(pool_size=(pool_size, pool_size))(conv_2_l)
+drop_1_l = Dropout(drop_prob_1)(pool_1_l)
+# Conv [64] -> Conv [64] -> Pool (with dropout on the pooling layer)
+conv_3_l = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu')(drop_1_l)
+conv_4_l = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu')(conv_3_l)
+pool_2_l = MaxPooling2D(pool_size=(pool_size, pool_size))(conv_4_l)
+drop_2_l = Dropout(drop_prob_1)(pool_2_l)
+# Now flatten to 1D, apply FC -> ReLU (with dropout) -> softmax
+flat_l = Flatten()(drop_2_l)
+hidden_l = Dense(hidden_size, activation='relu')(flat_l)
+drop_3_l = Dropout(drop_prob_2)(hidden_l)
+out_l = Dense(hidden_size, activation='relu')(drop_3_l)
 
-ocm_out_l = eye_cbase.layers[-4].output
-ocm_out_r = eye_cbase1.layers[-4].output
+conv_1_r = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu')(inp_eye_r)
+conv_2_r = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu')(conv_1_r)
+pool_1_r = MaxPooling2D(pool_size=(pool_size, pool_size))(conv_2_r)
+drop_1_r = Dropout(drop_prob_1)(pool_1_r)
+# Conv [64] -> Conv [64] -> Pool (with dropout on the pooling layer)
+conv_3_r = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu')(drop_1_r)
+conv_4_r = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu')(conv_3_r)
+pool_2_r = MaxPooling2D(pool_size=(pool_size, pool_size))(conv_4_r)
+drop_2_r = Dropout(drop_prob_1)(pool_2_r)
+# Now flatten to 1D, apply FC -> ReLU (with dropout) -> softmax
+flat_r = Flatten()(drop_2_r)
+hidden_r = Dense(hidden_size, activation='relu')(flat_r)
+drop_3_r = Dropout(drop_prob_2)(hidden_r)
+out_r = Dense(hidden_size, activation='relu')(drop_3_r)
 
 #concatenate
-eye_concatenate = Concatenate(axis=-1)([ocm_out_l, ocm_out_r, c1_drop_3])
+eye_concatenate = Concatenate(axis=-1)([out_l, out_r, c1_drop_3])
 c2_hidden = Dense(hidden_size, activation='relu')(eye_concatenate)
 c2_drop_3 = Dropout(drop_prob_2)(c2_hidden)
 
