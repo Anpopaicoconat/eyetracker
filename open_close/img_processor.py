@@ -5,6 +5,7 @@ import os
 import dlib
 import time
 import keras
+import csv
 
 #загрузка моделей
 detector = dlib.get_frontal_face_detector()
@@ -73,4 +74,7 @@ def f():
         cv2.imwrite(r'C:\Users\anpopaicoconat\source\repos\train_data\left\\'+n, l)
         cv2.imwrite(r'C:\Users\anpopaicoconat\source\repos\train_data\right\\'+n, r)
         cv2.imwrite(r'C:\Users\anpopaicoconat\source\repos\train_data\og\\'+n, i)
+        with open(r'C:\Users\anpopaicoconat\source\repos\train_data\landmarks.csv', "a", encoding="utf-8", newline="") as fh:
+            writer = csv.DictWriter(fh, fieldnames=["c"], quoting=csv.QUOTE_ALL)
+            writer.writerow(dict(c=c))
 f()

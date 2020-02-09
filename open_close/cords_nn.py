@@ -11,6 +11,27 @@ import os
 #import img_processor as prcs
 import os
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
+def mk_eye_cbase(s):
+    inp_eye = Input(shape=(64, 64, 3), name = '{}_eye_inp'.format(s)) # файнтюним ocm модель #будет ли он тренировать их раздельно?
+    conv_1 = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_1'.format(s))(inp_eye)
+    conv_2 = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_2'.format(s))(conv_1)
+    pool_1 = MaxPooling2D(pool_size=(pool_size, pool_size), name = '{}_eye_pool_1'.format(s))(conv_2)
+    drop_1 = Dropout(drop_prob_1, name = '{}_eye_drop_1'.format(s))(pool_1)
+    # Conv [64] -> Conv [64] -> Pool (with dropout on the pooling layer)
+    conv_3 = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_3'.format(s))(drop_1)
+    conv_4 = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_4'.format(s))(conv_3)
+    pool_2 = MaxPooling2D(pool_size=(pool_size, pool_size), name = '{}_eye_pool_2'.format(s))(conv_4)
+    drop_2 = Dropout(drop_prob_1, name = '{}_eye_drop_2'.format(s))(pool_2)
+    # Now flatten to 1D, apply FC -> ReLU (with dropout) -> softmax
+    flat = Flatten(name = '{}_eye_flat'.format(s))(drop_2)
+    hidden = Dense(hidden_size, activation='relu', name = '{}_eye_hidden_2'.format(s))(flat)
+    drop_3 = Dropout(drop_prob_2, name = '{}_eye_drop_3'.format(s))(hidden)
+    out = Dense(hidden_size, activation='relu', name = '{}_eye_hidden_2_out'.format(s))(drop_3)
+    model = Model(inputs = inp_eye, outputs = out)
+    for l, w in zip(model.layers[1:6], ocm.layers[1:6]):
+        l.set_weights(w.get_weights())
+    return model
+
 
 ###############################################
 batch_size = 32 # in each iteration, we consider 32 training examples at once
@@ -26,7 +47,8 @@ hidden_size = 512 # the FC layer will have 512 neurons
 ###############################################
 
 #model
-eye_cbase = keras.models.load_model('open-close Sat Jan 18 18.27.05 2020.h5')
+ocm = keras.models.load_model('open-close Sat Jan 18 18.27.05 2020.h5')
+weights_eye = ocm.get_weights()
 eye_cbase1 = keras.models.load_model('open-close Sat Jan 18 18.27.05 2020.h5')
 
 #inputs
@@ -60,38 +82,11 @@ c1_hidden = Dense(128, activation='relu')(lm_og_concatenate)
 c1_drop_3 = Dropout(drop_prob_2)(c1_hidden)
 
 #eye conv base
-conv_1_l = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu')(inp_eye_l)
-conv_2_l = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu')(conv_1_l)
-pool_1_l = MaxPooling2D(pool_size=(pool_size, pool_size))(conv_2_l)
-drop_1_l = Dropout(drop_prob_1)(pool_1_l)
-# Conv [64] -> Conv [64] -> Pool (with dropout on the pooling layer)
-conv_3_l = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu')(drop_1_l)
-conv_4_l = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu')(conv_3_l)
-pool_2_l = MaxPooling2D(pool_size=(pool_size, pool_size))(conv_4_l)
-drop_2_l = Dropout(drop_prob_1)(pool_2_l)
-# Now flatten to 1D, apply FC -> ReLU (with dropout) -> softmax
-flat_l = Flatten()(drop_2_l)
-hidden_l = Dense(hidden_size, activation='relu')(flat_l)
-drop_3_l = Dropout(drop_prob_2)(hidden_l)
-out_l = Dense(hidden_size, activation='relu')(drop_3_l)
-
-conv_1_r = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu')(inp_eye_r)
-conv_2_r = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu')(conv_1_r)
-pool_1_r = MaxPooling2D(pool_size=(pool_size, pool_size))(conv_2_r)
-drop_1_r = Dropout(drop_prob_1)(pool_1_r)
-# Conv [64] -> Conv [64] -> Pool (with dropout on the pooling layer)
-conv_3_r = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu')(drop_1_r)
-conv_4_r = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu')(conv_3_r)
-pool_2_r = MaxPooling2D(pool_size=(pool_size, pool_size))(conv_4_r)
-drop_2_r = Dropout(drop_prob_1)(pool_2_r)
-# Now flatten to 1D, apply FC -> ReLU (with dropout) -> softmax
-flat_r = Flatten()(drop_2_r)
-hidden_r = Dense(hidden_size, activation='relu')(flat_r)
-drop_3_r = Dropout(drop_prob_2)(hidden_r)
-out_r = Dense(hidden_size, activation='relu')(drop_3_r)
+eye_l = mk_eye_cbase('l')
+eye_r = mk_eye_cbase('r')
 
 #concatenate
-eye_concatenate = Concatenate(axis=-1)([out_l, out_r, c1_drop_3])
+eye_concatenate = Concatenate(axis=-1)([eye_l.output, eye_r.output, c1_drop_3])
 c2_hidden = Dense(hidden_size, activation='relu')(eye_concatenate)
 c2_drop_3 = Dropout(drop_prob_2)(c2_hidden)
 
@@ -99,9 +94,12 @@ c2_drop_3 = Dropout(drop_prob_2)(c2_hidden)
 out = Dense(2, activation='softmax')(c2_drop_3)
 
 #model
-model = Model(input=[inp_og, inp_lm, inp_eye_l, inp_eye_r], output=out)
+model = Model(input=[inp_og, inp_lm, eye_l.input, eye_r.input], output=out)
 
-keras.utils.plot_model(model, 'main model.png')
+#keras.utils.plot_model(model, 'main model.png')
+w1 = model.get_layer('l_eye_conv_1').get_weights()
+m_og = ocm.layers[1].get_weights()
+print('\n/n ravno&&&', np.array_equal(w1, m_og), 'm_og=', m_og, 'w1=', w1)
 #load data
 def load():
     img_l, targets = prcs.load_images(r'C:\Users\anpopaicoconat\source\repos\detector\detector\data\coords\pasha 1')
