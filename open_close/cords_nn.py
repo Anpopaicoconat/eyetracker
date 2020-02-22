@@ -25,26 +25,26 @@ def load(path = r'C:\Users\anpopaicoconat\source\repos\train_data'):
     with open(path_lm, "r") as fh:
         for row in csv.reader(fh):
             if row:
-                landmarks.append(row)
+                landmarks.append([int(i) for i in row])
     return left_eye, right_eye, og_img, landmarks
 
 def mk_eye_cbase(s):
-    inp_eye = input(shape=(64, 64, 3), name = '{}_eye_inp'.format(s)) # файнтюним ocm модель #будет ли он тренировать их раздельно?
-    conv_1 = convolution2d(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_1'.format(s))(inp_eye)
-    conv_2 = convolution2d(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_2'.format(s))(conv_1)
-    pool_1 = maxpooling2d(pool_size=(pool_size, pool_size), name = '{}_eye_pool_1'.format(s))(conv_2)
-    drop_1 = dropout(drop_prob_1, name = '{}_eye_drop_1'.format(s))(pool_1)
+    inp_eye = Input(shape=(64, 64, 3), name = '{}_eye_inp'.format(s)) # файнтюним ocm модель #будет ли он тренировать их раздельно?
+    conv_1 = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_1'.format(s))(inp_eye)
+    conv_2 = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_2'.format(s))(conv_1)
+    pool_1 = MaxPooling2D(pool_size=(pool_size, pool_size), name = '{}_eye_pool_1'.format(s))(conv_2)
+    drop_1 = Dropout(drop_prob_1, name = '{}_eye_drop_1'.format(s))(pool_1)
     # conv [64] -> conv [64] -> pool (with dropout on the pooling layer)
-    conv_3 = convolution2d(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_3'.format(s))(drop_1)
-    conv_4 = convolution2d(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_4'.format(s))(conv_3)
-    pool_2 = maxpooling2d(pool_size=(pool_size, pool_size), name = '{}_eye_pool_2'.format(s))(conv_4)
-    drop_2 = dropout(drop_prob_1, name = '{}_eye_drop_2'.format(s))(pool_2)
+    conv_3 = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_3'.format(s))(drop_1)
+    conv_4 = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_4'.format(s))(conv_3)
+    pool_2 = MaxPooling2D(pool_size=(pool_size, pool_size), name = '{}_eye_pool_2'.format(s))(conv_4)
+    drop_2 = Dropout(drop_prob_1, name = '{}_eye_drop_2'.format(s))(pool_2)
     # now flatten to 1d, apply fc -> relu (with dropout) -> softmax
-    flat = flatten(name = '{}_eye_flat'.format(s))(drop_2)
-    hidden = dense(hidden_size, activation='relu', name = '{}_eye_hidden_2'.format(s))(flat)
-    drop_3 = dropout(drop_prob_2, name = '{}_eye_drop_3'.format(s))(hidden)
-    out = dense(hidden_size, activation='relu', name = '{}_eye_hidden_2_out'.format(s))(drop_3)
-    model = model(inputs = inp_eye, outputs = out)
+    flat = Flatten(name = '{}_eye_flat'.format(s))(drop_2)
+    hidden = Dense(hidden_size, activation='relu', name = '{}_eye_hidden_2'.format(s))(flat)
+    drop_3 = Dropout(drop_prob_2, name = '{}_eye_drop_3'.format(s))(hidden)
+    out = Dense(hidden_size, activation='relu', name = '{}_eye_hidden_2_out'.format(s))(drop_3)
+    model = Model(inputs = inp_eye, outputs = out)
     for l, w in zip(model.layers[1:6], ocm.layers[1:6]):
         l.set_weights(w.get_weights())
     return model
@@ -114,9 +114,7 @@ out = Dense(2, activation='softmax')(c2_drop_3)
 model = Model(input=[inp_og, inp_lm, eye_l.input, eye_r.input], output=out)
 
 #keras.utils.plot_model(model, 'main model.png')
-w1 = model.get_layer('l_eye_conv_1').get_weights()
-m_og = ocm.layers[1].get_weights()
-print('\n/n ravno&&&', np.array_equal(w1, m_og), 'm_og=', m_og, 'w1=', w1)
+#w1 = model.get_layer('l_eye_conv_1').get_weights()
+#m_og = ocm.layers[1].get_weights()
 #load data
 left_eye, right_eye, og_img, landmarks = load()
-print(len(left_eye), len(right_eye), len(og_img), len(landmarks))
