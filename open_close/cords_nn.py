@@ -8,32 +8,49 @@ import numpy as np
 import keras
 import cv2
 import os
-#import img_processor as prcs
+import img_processor as prcs
 import os
+import csv
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
+
+def load(path = r'C:\Users\anpopaicoconat\source\repos\train_data'):
+    path_left = os.path.join(path, 'left')
+    path_right = os.path.join(path, 'right')
+    path_og = os.path.join(path, 'og')
+    path_lm = os.path.join(path, 'landmarks.csv')
+    left_eye, targets, _ = prcs.load_images(path_left)
+    right_eye, _, _ = prcs.load_images(path_right)
+    og_img, _, _ = prcs.load_images(path_og)
+    landmarks = []
+    with open(path_lm, "r") as fh:
+        for row in csv.reader(fh):
+            if row:
+                landmarks.append(row)
+    return left_eye, right_eye, og_img, landmarks
+
 def mk_eye_cbase(s):
-    inp_eye = Input(shape=(64, 64, 3), name = '{}_eye_inp'.format(s)) # файнтюним ocm модель #будет ли он тренировать их раздельно?
-    conv_1 = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_1'.format(s))(inp_eye)
-    conv_2 = Convolution2D(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_2'.format(s))(conv_1)
-    pool_1 = MaxPooling2D(pool_size=(pool_size, pool_size), name = '{}_eye_pool_1'.format(s))(conv_2)
-    drop_1 = Dropout(drop_prob_1, name = '{}_eye_drop_1'.format(s))(pool_1)
-    # Conv [64] -> Conv [64] -> Pool (with dropout on the pooling layer)
-    conv_3 = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_3'.format(s))(drop_1)
-    conv_4 = Convolution2D(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_4'.format(s))(conv_3)
-    pool_2 = MaxPooling2D(pool_size=(pool_size, pool_size), name = '{}_eye_pool_2'.format(s))(conv_4)
-    drop_2 = Dropout(drop_prob_1, name = '{}_eye_drop_2'.format(s))(pool_2)
-    # Now flatten to 1D, apply FC -> ReLU (with dropout) -> softmax
-    flat = Flatten(name = '{}_eye_flat'.format(s))(drop_2)
-    hidden = Dense(hidden_size, activation='relu', name = '{}_eye_hidden_2'.format(s))(flat)
-    drop_3 = Dropout(drop_prob_2, name = '{}_eye_drop_3'.format(s))(hidden)
-    out = Dense(hidden_size, activation='relu', name = '{}_eye_hidden_2_out'.format(s))(drop_3)
-    model = Model(inputs = inp_eye, outputs = out)
+    inp_eye = input(shape=(64, 64, 3), name = '{}_eye_inp'.format(s)) # файнтюним ocm модель #будет ли он тренировать их раздельно?
+    conv_1 = convolution2d(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_1'.format(s))(inp_eye)
+    conv_2 = convolution2d(conv_depth_1, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_2'.format(s))(conv_1)
+    pool_1 = maxpooling2d(pool_size=(pool_size, pool_size), name = '{}_eye_pool_1'.format(s))(conv_2)
+    drop_1 = dropout(drop_prob_1, name = '{}_eye_drop_1'.format(s))(pool_1)
+    # conv [64] -> conv [64] -> pool (with dropout on the pooling layer)
+    conv_3 = convolution2d(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_3'.format(s))(drop_1)
+    conv_4 = convolution2d(conv_depth_2, kernel_size, kernel_size, border_mode='same', activation='relu', name = '{}_eye_conv_4'.format(s))(conv_3)
+    pool_2 = maxpooling2d(pool_size=(pool_size, pool_size), name = '{}_eye_pool_2'.format(s))(conv_4)
+    drop_2 = dropout(drop_prob_1, name = '{}_eye_drop_2'.format(s))(pool_2)
+    # now flatten to 1d, apply fc -> relu (with dropout) -> softmax
+    flat = flatten(name = '{}_eye_flat'.format(s))(drop_2)
+    hidden = dense(hidden_size, activation='relu', name = '{}_eye_hidden_2'.format(s))(flat)
+    drop_3 = dropout(drop_prob_2, name = '{}_eye_drop_3'.format(s))(hidden)
+    out = dense(hidden_size, activation='relu', name = '{}_eye_hidden_2_out'.format(s))(drop_3)
+    model = model(inputs = inp_eye, outputs = out)
     for l, w in zip(model.layers[1:6], ocm.layers[1:6]):
         l.set_weights(w.get_weights())
     return model
 
 
-###############################################
+################################################
 batch_size = 32 # in each iteration, we consider 32 training examples at once
 num_epochs = 5 # we iterate 200 times over the entire training set
 kernel_size = 3 # we will use 3x3 kernels throughout
@@ -101,13 +118,5 @@ w1 = model.get_layer('l_eye_conv_1').get_weights()
 m_og = ocm.layers[1].get_weights()
 print('\n/n ravno&&&', np.array_equal(w1, m_og), 'm_og=', m_og, 'w1=', w1)
 #load data
-def load():
-    img_l, targets = prcs.load_images(r'C:\Users\anpopaicoconat\source\repos\detector\detector\data\coords\pasha 1')
-    l_eye = []
-    r_eye = []
-    coord_l = []
-    for i in img_l:
-        l, r, c = prcs.search_eye(i)
-        l_eye.append(l)
-        r_eye.append(r)
-        coord_l.append(c)
+left_eye, right_eye, og_img, landmarks = load()
+print(len(left_eye), len(right_eye), len(og_img), len(landmarks))

@@ -65,16 +65,18 @@ def show(img):
         else:
             print(k)
 
-img_l, targets, names = load_images(r'C:\Users\anpopaicoconat\source\repos\detector\detector\data\coords\pasha 1')
+
 #eyes = []
 #print('img_l', len(img_l))
-def f():
+def proces_img(path):
+    img_l, targets, names = load_images(path)
     for i, n in zip(img_l, names):
         l, r, c = search_eye(i)
+        print('c=', c)
         cv2.imwrite(r'C:\Users\anpopaicoconat\source\repos\train_data\left\\'+n, l)
         cv2.imwrite(r'C:\Users\anpopaicoconat\source\repos\train_data\right\\'+n, r)
         cv2.imwrite(r'C:\Users\anpopaicoconat\source\repos\train_data\og\\'+n, i)
-        with open(r'C:\Users\anpopaicoconat\source\repos\train_data\landmarks.csv', "a", encoding="utf-8", newline="") as fh:
-            writer = csv.DictWriter(fh, fieldnames=["c"], quoting=csv.QUOTE_ALL)
-            writer.writerow(dict(c=c))
-f()
+        with open(r'C:\Users\anpopaicoconat\source\repos\train_data\landmarks.csv', "a") as fh:
+            writer = csv.writer(fh)
+            writer.writerow(c) 
+#proces_img(r'C:\Users\anpopaicoconat\source\repos\detector\detector\data\coords\pasha 2')
